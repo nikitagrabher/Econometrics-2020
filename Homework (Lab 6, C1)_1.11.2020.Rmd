@@ -1,0 +1,27 @@
+---
+title: "Lab 6 - Homework, Part C2"
+author: "Nikita Grabher-Meyer"
+date: "11/2/2020"
+output: html_document
+---
+
+# PART C (coding)
+## Part 2
+
+
+### Data simulation
+
+*Binomial distribution: it describes the probability of observing a given number of successes in N independent Bernoulli trials with probability p*
+```{r}
+rbinom(2,5000,.05)
+```
+Let's assume we’re in charge of quality for a factory. We make 5000 components each Monday and Tuesday. Defective widgets must be reworked. We know that there is a 5% error rate. Each Monday and Tuesday we'll have to fix 254 and 249 components.
+
+
+*Poisson distribution: it describes the probability that a given number of events occurs in a fixed time interval. The events are assumed to occur at a known average rate and independent from each other*
+```{r}
+rpois(5000,2)
+```
+
+
+
