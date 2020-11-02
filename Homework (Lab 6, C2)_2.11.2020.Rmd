@@ -1,0 +1,198 @@
+---
+title: "Lab 6 - Homework, Part C2"
+author: "Nikita Grabher-Meyer"
+date: "11/2/2020"
+output:
+  word_document: default
+  html_document: default
+---
+
+# PART C (coding)
+## Part 2
+
+
+### Choose at least 3 distributions and try to simulate data (e.g. 5000 draws) from a random variable that follows this distribution
+
+*Normal distribution*
+```{r}
+a <- rnorm(5000)
+a[1:20]
+hist(a, main = "Normal Distribution")
+```
+
+*Binomial distribution: number of successes in a set of pass/fail trials with success estimated at probability p*
+The function takes three arguments: number of observations you want to see, number of trials per observation, probability of success for each trial.
+```{r}
+b <- rbinom(5000,2,.4)
+b[1:20]
+```
+
+*Poisson distribution: number of expected events for a process given we know the average rate at which events occur during a given unit of time*
+The function takes three arguments: Number of observations you want to see,The estimated rate of events for the distribution; this is expressed as average events per period. 
+```{r}
+c <- +rpois(5000,2)
+c[1:20]
+```
+
+### Draw two samples from each variable and report the sample means. Are they equal?
+
+*Normal distribution*
+```{r}
+s=500 #sample size
+
+samplea1 <- sample(a,s)
+samplea2 <- sample(a,s)
+
+mean(samplea1)
+mean(samplea2)
+```
+
+*Binomial distribution*
+```{r}
+s=500 #sample size
+
+sampleb1 <- sample(b,s)
+sampleb2 <- sample(b,s)
+
+mean(sampleb1)
+mean(sampleb2)
+```
+
+*Poisson distribution*
+```{r}
+s=500 #sample size
+
+samplec1 <- sample(c,s)
+samplec2 <- sample(c,s)
+
+mean(samplec1)
+mean(samplec2)
+```
+
+The sample means (no matter which distribution is considered) are not equal.
+
+### Follow the steps for illustrating the Central Limit Theorem using a poisson, a uniform and a normal distribution.Compare the normal, poisson and the uniform, what do you notice for 100 draws?
+
+*Poisson distribution*
+```{r}
+poisson10 <- replicate (10000, {
+  a <- rpois(10,5)
+  mean(a)
+})
+
+poisson100 <- replicate (10000, {
+  a <- rpois(100,5)
+  mean(a)
+})
+```
+
+*Uniform distribution*
+```{r}
+uniform10 <- replicate (10000, {
+  b <- rpois(10,5)
+  mean(b)
+})
+
+uniform100 <- replicate (10000, {
+  b <- rpois(100,5)
+  mean(b)
+})
+```
+
+*Normal distribution*
+```{r}
+normal10 <- replicate (10000, {
+  c <- rnorm(10)
+  mean(c)
+})
+
+normal100 <- replicate (10000, {
+  c <- rnorm(100)
+  mean(c)
+})
+```
+
+*Compare the three distributions*
+```{r}
+par(mfrow=c(3,2))
+hist(uniform10, xlim=c(0,1), main="Uniform distribution", xlab="Sample size 10")
+hist(uniform100, xlim=c(0,1), main="Uniform distribution", xlab="Sample size 100")
+hist(poisson10, xlim=c(2,8), main="Poisson distribution", xlab="Sample size 10")
+hist(poisson100, xlim=c(2,8), main="Poisson distribution", xlab="Sample size 100")
+hist(normal10, xlim=c(-1,1), main="Normal distribution", xlab="Sample size 10")
+hist(normal100, xlim=c(-1,1), main="Normal distribution", xlab="Sample size 100")
+```
+The central limit theorem states that if you have a population with mean μ and standard deviation σ and take sufficiently large random samples from the population, then the distribution of the sample means will be approximately normally distributed (regardless of the population distribution).
+
+
+### Testing
+
+*Load the data*
+```{r}
+setwd("/Users/nikitagrabher-meyer/Desktop/PHD/Econometrics/Labs/Lab 6, Homework")
+
+library(data.table)
+library(ggplot2)
+library(stargazer)
+
+load("dt_wages.RData")
+dt.wages <- data.table(dt.wages)
+```
+
+*Summaries* 
+```{r}
+stargazer(dt.wages, type = "text")
+```
+
+*Create an estimator for the average wage by group*
+```{r}
+wage <- dt.wages[,list(avg_wage=mean(wage))]
+
+wage.nowh <- dt.wages[,list(avg_wage=mean(wage)), by=nonwhite]
+wage.fem <- dt.wages[,list(avg_wage=mean(wage)), by=female]
+
+wage.nowh
+wage.fem
+```
+
+*Confidence intervals*
+*How to calculate the 95% confidence intervals for the population wage?*
+```{r}
+dt.wages[ , list (avg_wage=mean(wage) , sd_wage=sd(wage))]
+```
+
+*Create a function to calculate the 95% confidence interval*
+```{r}
+conf.int <- function(X){
+     n <- length(X)
+     error <- qt(0.975, df=n-1) * sd(X) / sqrt(n)
+     mean.X <- mean(X)
+     return(list(lower = mean.X - error, upper = mean.X +error))
+}
+```
+
+*Apply the "conf.int" function to the wage variable*
+```{r}
+dt.wages[,conf.int(wage)]
+```
+
+*Confidence intervals by group*
+```{r}
+dt.wages[,conf.int(wage), by=nonwhite]
+dt.wages[,conf.int(wage), by=female]
+```
+
+*Hypothesis testing, using the function t-test*
+```{r}
+dt.wages[female==1, t.test(wage,mu=5)]
+```
+
+*Are wages of men different from wages of women?*
+```{r}
+t.test(dt.wages[female==1,wage],dt.wages[female==0,wage])
+```
+
+*Are wages of whites different from wages of non-whites?*
+```{r}
+t.test(dt.wages[nonwhite==1,wage],dt.wages[nonwhite==0,wage])
+```
