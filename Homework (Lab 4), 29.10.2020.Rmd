@@ -1,0 +1,341 @@
+---
+title: "Lab 4 - Homework 29 Oct 2020"
+author: "Nikita Grabher-Meyer"
+date: "10/29/2020"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+
+
+
+## Setup: set working directory, load packages and data set
+```{r}
+setwd("/Users/nikitagrabher-meyer/Desktop/PHD/Econometrics/Labs/Lab 4")
+
+library(data.table)
+library(ggplot2)
+require(stargazer)
+
+load("affairs.RData")
+dt.affairs <- data.table(data)
+rm(data)
+```
+
+## Summary statistics
+```{r} 
+stargazer(dt.affairs, type = "text")
+```
+
+## Hypothesis
+
+### Two-sided hypothesis test
+
+*Hypotheses regarding the likelihood and number of extra-marital affairs*
+*H0 : μ (non−religious) − μ (religious)=0*
+*H1 : μ (non−religious) − μ (religious)!=0*
+
+Create an indicator variable for "religious"
+```{r} 
+dt.affairs[, religious:= relig>3]
+```
+
+Check how many people are in each group
+```{r} 
+dt.affairs[, .N, by = religious]
+```
+
+Run t.test on the likelihood of extra-marital affairs
+```{r} 
+dt.affairs[, t.test(affair ~ religious)]
+```
+The p-value is below 0.05, therefore we reject HO that there is no difference in the mean probability of having an affair between the religious and non-religious group
+
+Run t.test on the number of extra-marital affairs
+```{r} 
+dt.affairs[, t.test(naffairs ~ religious)]
+```
+The p-value is below 0.05, therefore we reject HO that there is no difference in the average number of affairs between the religious and non-religious group
+
+### One-sided hypothesis test
+
+*Hypotheses regarding the likelihood and number of extra-marital affairs*
+*H0 : μ (non−religious) − μ (religious)<=0*
+*H1 : μ (non−religious) − μ (religious)>0*
+
+Run t.test on the likelihood of extra-marital affairs
+```{r} 
+dt.affairs[, t.test(affair ~ religious, alternative = c("greater"))]
+```
+
+Run t.test on the number of extra-marital affairs
+```{r} 
+dt.affairs[, t.test(naffairs ~ religious, alternative = c("greater"))]
+```
+
+
+## Multiple Regression
+
+### Case: Direct marketing
+
+*Predict the amount spent*
+
+Load the data
+```{r} 
+dt.mktg <- data.table(read.csv("DirectMarketing.csv"))
+dt.mktg <- setnames(dt.mktg, tolower(names(dt.mktg)))
+```
+
+Get to know the data
+```{r} 
+nrow(dt.mktg)
+```
+
+```{r} 
+colnames(dt.mktg)
+```
+
+```{r} 
+head(dt.mktg)
+```
+
+```{r} 
+summary(dt.mktg)
+```
+
+```{r} 
+stargazer(dt.mktg, type = "text")
+```
+
+Explore the data graphically
+
+1) Age
+```{r}
+qplot( data = dt.mktg
+, x = age
+, geom = "bar") + theme_bw() + xlim("Young","Middle","Old")
+```
+
+2) Gender
+```{r}
+qplot( data = dt.mktg
+, x = gender
+, geom = "bar") + theme_bw()
+```
+
+3) Own a home
+```{r}
+qplot( data = dt.mktg
+, x = ownhome
+, geom = "bar") + theme_bw()
+```
+
+4) Married
+```{r}
+qplot( data = dt.mktg
+, x = married
+, geom = "bar") + theme_bw()
+```
+
+5) Location
+```{r}
+qplot( data = dt.mktg
+, x = location
+, geom = "bar") + theme_bw()
+```
+
+6) Children
+```{r}
+qplot( data = dt.mktg
+, x = factor(children)
+, geom = "bar") + theme_bw()
+```
+
+7) History
+```{r}
+qplot( data = dt.mktg
+, x = history
+, geom = "bar") + theme_bw()
+```
+
+8) Catalogs
+```{r}
+qplot( data = dt.mktg
+, x = factor(catalogs)
+, geom = "bar") + theme_bw()
+```
+
+9) Salary 1
+```{r}
+qplot( data = dt.mktg
+, x = salary
+, geom = "histogram") + theme_bw()
+```
+
+10) Salary 2
+```{r}
+qplot( data = dt.mktg
+, x = salary
+, geom = "density") + theme_bw()
+```
+
+11) Amount spent 1
+```{r}
+qplot( data = dt.mktg
+, x = amountspent
+, geom = "histogram") + theme_bw()
+```
+
+12) Amount spent 2
+```{r}
+qplot( data = dt.mktg
+, x = amountspent
+, geom = "density") + theme_bw()
+```
+
+13) Amount spent by age
+```{r}
+qplot( data = dt.mktg
+, x = factor(age)
+, y = amountspent
+, geom ="boxplot") + theme_bw() + xlim("Young","Middle","Old")
+```
+
+14) Amount spent by gender
+```{r}
+qplot( data = dt.mktg
+, x = factor(gender)
+, y = amountspent
+, geom ="boxplot") + theme_bw()
+```
+
+15) Amount spent if owing a home
+```{r}
+qplot( data = dt.mktg
+, x = factor(ownhome)
+, y = amountspent
+, geom ="boxplot") + theme_bw()
+```
+
+16) Amount spent if married
+```{r}
+qplot( data = dt.mktg
+, x = factor(married)
+, y = amountspent
+, geom ="boxplot") + theme_bw()
+```
+
+17) Amount spent by location
+```{r}
+qplot( data = dt.mktg
+, x = factor(location)
+, y = amountspent
+, geom ="boxplot") + theme_bw()
+```
+
+18) Amount spent by N. of children
+```{r}
+qplot( data = dt.mktg
+, x = factor(children)
+, y = amountspent
+, geom ="boxplot") + theme_bw()
+```
+
+19) Amount spent by history
+```{r}
+qplot( data = dt.mktg
+, x = factor(history)
+, y = amountspent
+, geom ="boxplot") + theme_bw() + xlim("Low", "Medium", "High", NA)
+```
+
+20) Amount spent by catalogs
+```{r}
+qplot( data = dt.mktg
+, x = factor(catalogs)
+, y = amountspent
+, geom ="boxplot") + theme_bw()
+```
+
+
+*Simple regression - Interpretation*
+
+```{r}
+lm1 <- lm(amountspent ~ salary, data = dt.mktg)
+stargazer(lm1, type = "text")
+```
+B0 = −15.318 and the corresponding standard error is 45.374. B0 is not significantly different from zero, thus the absence of stars by this coefficient.
+B1 = 0.022, and the corresponding standard error is 0.001. B1 is significant at the 1% level, indicated by the three stars by this coefficient. According to this simple regression model, for each unit (dollar) increase in the customer’s salary, we can expect an increase of 0.022 units (dollars) in the amount spent by the customer. The variable salary explains 49% of the variation in the variable amountspent (R2 = 0.489).
+
+```{r}
+lm2 <- lm(amountspent ~ location, data = dt.mktg)
+stargazer(lm2, type = "text")
+```
+B0 = 1,061.686 which is the average amount spent by customers who are “close” (where close is the omitted category of the variable location). In fact:
+```{r}
+dt.mktg[location=="Close", mean(amountspent)]
+```
+
+B1 = 534.7736. By adding B0 + B1 we get the average amount spent by customers who are “far”.
+```{r}
+dt.mktg[location=="Far", mean(amountspent)]
+```
+
+
+```{r}
+lm3 <- lm(amountspent ~ history, data = dt.mktg)
+stargazer(lm3 , type = "text")
+```
+B0 = 2,186.137 which is the average amount spent by customers who have a “high” purchase history (where “high” is the omitted category of the variable history). In fact:
+```{r}
+dt.mktg[history=="High", mean(amountspent)]
+stargazer(lm3 , type = "text")
+```
+
+B0 + B1 give us the average amount spent by customers who have a “low” purchase history:
+```{r}
+dt.mktg[history=="Low", mean(amountspent)]
+```
+
+B0 + B2 give us the average amount spent by customers who have a “medium” purchase history:
+```{r}
+dt.mktg[history=="Medium", mean(amountspent)]
+```
+
+
+*Multiple regression*
+
+```{r}
+lm.spend1 <- lm( amountspent ~ gender + location + salary + children + catalogs
+, data = dt.mktg)
+stargazer(lm.spend1 , type = "text")
+```
+
+Alternatively, one shortcut for including all the variables in your dataset (except the dependent variable) as independent variables in your model is to use a “.":
+```{r}
+lm.spend2 <- lm(amountspent ~ ., data = dt.mktg)
+stargazer(lm.spend1, lm.spend2 , type = "text")
+```
+
+
+*Predict amount spent by new customer*
+
+```{r}
+new.client <- data.table( gender = "Male"
+, location = "Close"
+, salary = 53700
+, children = 1
+, catalogs = 12)
+new.client
+```
+
+```{r}
+my.pred <- predict(lm.spend1, newdata = new.client)
+my.pred
+```
+
+```{r}
+my.pred <- predict(lm.spend1, newdata = new.client, interval="prediction", level = .95)
+my.pred
+```
