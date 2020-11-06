@@ -1,0 +1,159 @@
+---
+title: "Homework 2"
+author: "Nikita Grabher-Meyer"
+date: "10/27/2020"
+output: html_document
+---
+
+
+## Hlavac, Marek (2018). stargazer: Well-Formatted Regression and Summary Statistics Tables.
+## R package version 5.2.2. https://CRAN.R-project.org/package=stargazer
+
+
+### Setup: set working directory, install and activate necessary packages
+
+```{r setup, include=FALSE}
+setwd("/Users/nikitagrabher-meyer/Desktop/PHD/Econometrics")
+library("ggplot2")
+library("stargazer")
+library("data.table")
+```
+
+# Data Analysis
+
+### Load data set
+```{r} 
+load("/Users/nikitagrabher-meyer/Desktop/PHD/Econometrics/ceosal2.RData")
+dt.ceo.salaries <- data.table(data)
+rm(data)
+```
+
+### Descriptive statistics
+
+*How many CEOS are in the sample?*
+```{r} 
+nrow(dt.ceo.salaries)
+```
+
+*How many CEOS have a graduate degree?*
+```{r} 
+nrow(dt.ceo.salaries[grad==1,])
+```
+
+*What is the percentage of CEOs with graduate degrees?*
+```{r} 
+dt.ceo.salaries[, sum(grad)]/nrow(dt.ceo.salaries)
+```
+
+*What is the average CEO salary?*
+```{r} 
+dt.ceo.salaries[, mean(salary)]
+```
+
+*What is the mean CEO salary for those with a graduate degree?*
+```{r} 
+dt.ceo.salaries[grad==1, mean(salary)]
+```
+
+*What is the mean CEO salary for those without a graduate degree?*
+```{r} 
+dt.ceo.salaries[grad==0, mean(salary)]
+```
+
+*How many CEOs have/don’t have a college degree?*
+```{r}
+dt.ceo.salaries[ , list(n_ceo=.N), by = college]
+```
+
+*Can we say that the mean salary is statistically different from 800?*
+```{r} 
+t.test(dt.ceo.salaries[, salary], mu = 800)
+```
+
+We can not reject the null Hp that the population mean is = 800 (this value is indeed contained in the 95 percent confidence interval: 778.7015 953.0274)
+
+
+*Is the average salary different for CEOs with a graduate degree and those without?*
+```{r} 
+t.test(dt.ceo.salaries[grad==0, salary] , dt.ceo.salaries[grad==1, salary])
+```
+
+We can not reject the null Hp that there is no difference between the two population means (the value 0 - no difference between the two means - is indeed contained in the 95 percent confidence interval: -175.0489 182.0932)
+
+
+*Summary table of descriptive statistics*
+```{r} 
+stargazer(dt.ceo.salaries, type = "text")
+```
+
+
+### Plots
+
+**Histogram**
+
+*Salary*
+```{r}
+qplot( data = dt.ceo.salaries
+, x = salary
+, geom = "histogram")
+```
+
+*Age*
+```{r}
+qplot( data = dt.ceo.salaries
+, x = age
+, geom = "histogram")
+```
+
+**Scatterplot**
+
+*Sales vs profits*
+```{r}
+qplot( data = dt.ceo.salaries
+, x = sales
+, y = profits
+, geom = "point")
+```
+
+**Barplot**
+
+*Graduate*
+```{r}
+qplot( data = dt.ceo.salaries
+, x = factor(grad)
+, geom = "bar")
+```
+
+**Line**
+
+*Sales vs profits*
+```{r}
+qplot( data = dt.ceo.salaries
+, x = sales
+, y = profits
+, geom = "line")
+```
+
+**Facet wrap**
+
+*Salary*
+```{r}
+qplot( data = dt.ceo.salaries
+, x = salary
+, geom = "histogram") + facet_wrap(~ grad)
+```
+
+**Customized plots**
+
+*Salary of graduates vs non graduates*
+```{r}
+qplot( data = dt.ceo.salaries
+, x = salary
+, geom = "histogram"
+, fill = factor(grad, levels = c(0,1), labels = c("Yes", "No"))) +
+theme_bw() +
+ylim(0,50) +
+xlim(0, 4000) +
+labs( title = "MY PLOT", x = "CEO Salary", y = "Number of CEOs", fill = "Grad. Degree")
+```
+
