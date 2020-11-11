@@ -1,0 +1,170 @@
+---
+title: "Lab 10"
+author: "Nikita Grabher-Meyer"
+date: "11/11/2020"
+output:
+  word_document: default
+  html_document: default
+---
+
+# Matrix, Figures and Experiments
+
+## 1) Starting from file Lab_09.RScript, try to run yourself what you saw in "Matrix_03" the primer session
+
+*Identity matrix*
+```{r}
+I1 <- diag(1)
+I1
+
+I2 <- diag(2)
+I2
+
+A <- matrix(1:4, nrow=2, ncol = 2)
+A
+
+AI <- A%*%I2
+AI
+```
+
+*Symmetric matrix*
+```{r}
+S <- cbind(c(1,2,3),c(2,1,4), c(3,4,3))
+S
+
+trS <- t(S)
+trS
+```
+
+*Basic properties*
+```{r}
+X<- cbind(c(1,2), c(3,4), c(5,6))
+Y <- cbind(c(7,8), c(9,10), c(11,12))
+X+Y
+
+Z <- cbind(c(1,2), c(3,4))
+W <- cbind(c(5,6), c(8,8))
+ZW1 <- Z%*%W
+ZW2 <- W%*%Z
+ZW1
+ZW2
+
+trZW1 <- t(ZW1)
+trZ <- t(Z)
+trW <- t(W)
+trWtrZ <- trW%*%trZ
+trZW1
+trWtrZ
+
+trtrZ <- t(trZ)
+trtrZ
+Z
+```
+
+*Inverse matrix*
+```{r}
+C <- matrix(c(1,0,3,1), nrow=2, ncol = 2)
+C
+
+invC <- solve(C)
+invC
+
+CinvC <- C%*%invC
+CinvC
+```
+
+
+## 2) Using the file Lab02_mkm_Econometrics1_RodBased_DataHandling: 
+
+### a.Read dt.wages and apply ‘data.table’
+```{r}
+setwd("/Users/nikitagrabher-meyer/Desktop/PHD/Econometrics/Labs/Lab 10, Homework")
+
+library(data.table)
+library(ggplot2)
+library(stargazer)
+library(GGally)
+library(Metrics)
+
+load("dt_wages.RData")
+```
+
+```{r}
+dt.wages <- data.table(dt.wages)
+```
+
+### b.Get basic summary statistics. How many observations, how many variables?
+```{r}
+str(dt.wages)
+head(dt.wages, 3)
+tail(dt.wages, 3)
+summary(dt.wages)
+stargazer (dt.wages, type="text")
+stargazer (dt.wages, type="text", iqr=TRUE)
+ncol(dt.wages)
+
+table(dt.wages[, list(female, nonwhite)])
+table(dt.wages[, list (female, nonwhite, south)])
+table(dt.wages[, list (female , tenure)])
+table(dt.wages[, list (nonwhite , tenure)])
+```
+
+## c.Reproduce the data-handling steps shown in the slides (and dt.wages)
+```{r}
+qplot(factor(educ),data=dt.wages,geom="bar")
+qplot(x=factor(1),fill=factor(educ),data=dt.wages,geom="bar") + coord_polar(theta="y")
+qplot(wage,data=dt.wages,geom="histogram")
+qplot(wage,data=dt.wages,geom="histogram",binwidth=2)
+qplot(x=factor("All"),y=wage,data=dt.wages,geom="boxplot")
+qplot(factor(female),wage,data=dt.wages,geom="boxplot")
+qplot(factor(female),wage,fill=factor(nonwhite),data=dt.wages,geom="boxplot")
+qplot(factor(nonwhite),wage,fill=factor(female),data=dt.wages,geom="boxplot")
+ggplot(dt.wages)+geom_boxplot(aes(factor(educ),exper))
+qplot(educ,wage,data=dt.wages,geom="point")
+qplot(educ,wage,color=factor(female),data=dt.wages,geom="point")
+ggplot(dt.wages)+geom_point(aes(educ,wage))+facet_grid(~female)
+ggplot(dt.wages)+geom_point(aes(educ,wage))+facet_grid(nonwhite~female)
+ggplot(dt.wages)+geom_point(aes(educ,wage))+facet_grid(nonwhite~female, margins=TRUE)
+ggpairs(dt.wages[,list(wage,educ,exper)])
+ggpairs(dt.wages[,list(female=factor(female),nonwhite=factor(nonwhite))])
+ggpairs(dt.wages[,list(wage,educ,exper,female=factor(female),nonwhite=factor(nonwhite))])
+```
+
+```{r}
+dt.wages[wage>20,][order(-wage)]
+qplot(lwage,data=dt.wages,geom="histogram")
+dt.wages[lwage< 0,]
+```
+
+
+## 3) Let’s do a thought experiment: Using the slide-deck UEA_ecoR2PhD CoreLect_06 ATENT_Match_Stk and dt.wages, let’s pretend, for a moment “south,” is a randomly assigned treatment in an experiment:
+
+### a.Compute a difference-in-means estimator when treatment is “south,” and the outcome is wage
+```{r}
+dt.wages[south==1, mean(wage)] - dt.wages[south==0, mean(wage)]
+```
+
+### b.Now focus on race and gender as control variables (in “x”) and run a regression estimation of treatment effects
+```{r}
+reg1 <- lm(wage ~ south + nonwhite + female, data=dt.wages)
+stargazer(reg1, type = "text")
+```
+
+### c.Now try to estimate the regression and account for potentially heterogeneous treatment effects. 
+```{r}
+reg2 <- lm(wage ~ south + nonwhite + female + nonwhite*south + female*south, data=dt.wages)
+stargazer(reg2, type = "text")
+```
+
+### d.Try to implement a 2-step fitted regression.
+```{r}
+south.yes <- subset(dt.wages, south==1)
+south.no <- subset(dt.wages, south==0)
+
+reg3.1 <- lm(wage ~ nonwhite + female, data=south.yes)
+reg3.2 <- lm(wage ~ nonwhite + female, data=south.no)
+
+stargazer(reg3.1, reg3.2, type = "text")
+
+dt.wages$y_hat1 <- predict(reg3.1, newdata=dt.wages)
+dt.wages$y_hat0 <- predict(reg3.2, newdata=dt.wages)
+```
