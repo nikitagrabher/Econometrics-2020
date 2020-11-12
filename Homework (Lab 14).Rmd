@@ -1,0 +1,136 @@
+---
+title: "Lab 14"
+author: "Nikita Grabher-Meyer"
+date: "11/12/2020"
+output:
+  word_document: default
+  html_document: default
+---
+
+# Lab 14
+
+## Minimum Wages and Employment: A case study of the fast-food industry in New Jersey and Pennsylvania
+
+*Data*
+```{r}
+setwd("/Users/nikitagrabher-meyer/Desktop/PHD/Econometrics/Labs/Lab 14, Homework")
+
+require(data.table)
+require(ggplot2)
+require(stargazer) 
+
+load("fastfood3.RData")
+load("fastfood4.RData")
+load("fastfood.RData")
+```
+
+*Analysis and Results*
+```{r}
+head(dt.fastfood)
+```
+
+*Plots*
+
+*Change in wages*
+```{r}
+plot1 <- ggplot( data = dt.fastfood, aes(x = wage))
+plot1 + geom_density() + facet_wrap( ~ state + time) + theme_bw()
+```
+
+*Change in employment*
+```{r}
+qplot( data = dt.fastfood, x = factor(time), y = emptot
+, fill = factor(state)
+, geom = "boxplot") + theme_bw() + xlab("time") + ylab("FTE Employment")
+```
+
+*Means of key variables*
+```{r}
+dt.bf.aft <- data.table(dt.fastfood)
+dt.bf.aft <- dt.bf.aft[, list( 
+mean_emptot = mean(emptot , na.rm=TRUE)
+, mean_wage = mean(wage , na.rm=TRUE)
+, mean_pmeal = mean(pmeal , na.rm=TRUE)
+, mean_hrsopen = mean(hrsopen , na.rm=TRUE)
+), by=list(state, time)]
+dt.bf.aft
+```
+
+```{r}
+dt.bf.aft.clean <- dt.fastfood[!is.na(wage),]
+dt.bf.aft.clean <- dt.bf.aft.clean[!is.na(pmeal),]
+dt.bf.aft.clean <- dt.bf.aft.clean[!is.na(emptot),]
+dt.bf.aft.clean <- dt.bf.aft.clean[!is.na(hrsopen),]
+dt.bf.aft.clean <- dt.bf.aft.clean[!is.na(emptot),]
+dt.bf.aft.clean <- data.table(dt.fastfood.clean)
+dt.bf.aft.clean <- dt.bf.aft.clean[, list(
+mean_emptot = mean(emptot , na.rm=TRUE)
+, mean_wage = mean(wage , na.rm=TRUE)
+, mean_pmeal = mean(pmeal , na.rm=TRUE)
+, mean_hrsopen = mean(hrsopen , na.rm=TRUE)
+), by=list(state, time)]
+dt.bf.aft.clean
+
+t.test( dt.fastfood.clean[state==0 & time==0, emptot]
+, dt.fastfood.clean[state==1 & time==0, emptot])
+
+t.test( dt.fastfood.clean[state==0 & time==1, emptot]
+, dt.fastfood.clean[state==1 & time==1, emptot])
+```
+
+*Differences in Differences*
+```{r}
+(21.02743-20.44557) - (21.16558-23.33117)
+(20.71293-20.51397) - (21.50000-23.62687)
+```
+
+*Regression*
+```{r}
+# Effect on employment
+lm1 <- lm( emptot ~ time + state + time*state, data = dt.fastfood.clean)
+stargazer(lm1, type = "text")
+
+coeffs <- coefficients(lm1)
+coeffs
+
+dt.bf.aft.clean
+
+21.50000 - 23.62687
+21.50000 - 23.62687
+(20.71293 - 20.51397) - (21.50000 - 23.62687)
+
+# Add controls for chain and ownership
+lm <- lm( emptot ~ time + state + time*state + factor(chain) + co_owned
+, data = dt.fastfood.clean)
+stargazer(lm, type = "text")
+
+# Change in meal prices
+qplot( data = dt.fastfood, x = factor(time), y = pmeal
+, fill = factor(state)
+, geom = "boxplot") + theme_bw() + xlab("time") + ylab("Meal Price")
+
+# Effect on meal prices
+lm <- lm( pmeal ~ time + state + time*state
+, data = dt.fastfood.clean)
+stargazer(lm, type = "text")
+
+# Change in number of hours of operation
+qplot( data = dt.fastfood, x = factor(time), y = hrsopen
+, fill = factor(state)
+, geom = "boxplot") + theme_bw() + xlab("time") + ylab("Hours of Operation")
+
+# Effect on hours open
+lm <- lm( hrsopen ~ time + state + time*state
+, data = dt.fastfood.clean)
+stargazer(lm, type = "text")
+
+# Effect on the fraction of full-time employees
+lm <- lm( fracft ~ time + state + time*state, data = dt.fastfood.clean)
+stargazer(lm, type = "text")
+
+# Alternative Specifications
+summary(dt.fastfood.clean$gap)
+
+lm <- lm( emptot ~ gap * time , data = dt.fastfood.clean)
+stargazer(lm, type = "text")
+```
