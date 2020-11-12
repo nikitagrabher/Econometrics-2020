@@ -1,0 +1,141 @@
+---
+title: "Lab 12"
+author: "Nikita Grabher-Meyer"
+date: "11/12/2020"
+output:
+  word_document: default
+  html_document: default
+---
+
+# Lab 12
+
+## OLS regression on foot
+
+*Setup*
+```{r}
+setwd("/Users/nikitagrabher-meyer/Desktop/PHD/Econometrics/Labs/Lab 12, Homework")
+
+library(data.table)
+library(stargazer
+        )
+df.OLSdat <- read.table("OLSqData.RData")
+DT <- data.table(df.OLSdat) 
+```
+
+*Take a look at the data, which variables do you have?*
+```{r}
+summary(df.OLSdat)
+summary(DT)
+```
+
+*Now use cbind to build 2 matrices: a) Using DT$const, DT$x1, DT$x2 and DT$x3 to build matrix X and b) Using DT$y5 to build matrix y*
+```{r}
+X <- cbind(c(DT$const), c(DT$x1), c(DT$x2), c(DT$x3))
+
+y <- cbind(c(DT$y1))
+```
+
+*Now compute X’ (transpose of X)*
+```{r}
+Xt <- t(X)
+```
+
+*Next compute X’X . Report your result*
+```{r}
+XtX <- Xt%*%X
+```
+
+*Next compute the inverse of X’X. Report it*
+```{r}
+invXtX <- (XtX)^-1
+```
+
+*Next compute X’y. Report it*
+```{r}
+Xty <- Xt%*%y
+```
+
+*Lastly multiply the inverse of X’X with X’y. Report your result. What is this?*
+```{r}
+OLS <- invXtX%*%Xty
+OLS
+```
+
+*Finally run a few comparisons: Regress y1 on x1, x2, and x3 in a linear model* 
+```{r}
+OLS1 <- lm(y1 ~ x1 + x2 + x3, data=DT)
+summary(OLS1)
+```
+
+*Divide XtX by n (number of observations) and compare it to cov(DT), comment* 
+```{r}
+XtX/7584
+
+covDT <- cov(DT)
+covDT
+```
+
+
+## IV – Exercise 
+```{r}
+dt.IV <- read.table("IV_Data.RData")
+dt.IV <- data.table(dt.IV) 
+IV <- lm(y5 ~ x1 + x2, data=dt.IV)
+stargazer(IV, type = "text")
+```
+
+*Looking at the Var-Cov Matrix, what bias would you expect for x1 and what bias for x2?, calculate! (Hint: the X – matrix for calculating the bias consists of x1 and x2., i.e. you can disregard the z’s and the constant for this calculation. E(X,u) is given by the “eps” - column)*
+The coefficients of x1 and x2 are both positive. Also the two variable have positive correlation. The bias should be positive as well.
+
+*Which of the X Variables is endogenous with y (e.g. a simultaneity problem)? If you can mend only one of the variables, which one would you tackle and why? You have 4 candidates that you can use as an instrumental variable for X1, but one is itself endogenous, one is a weak instrument, one is irrelevant and only one is valid. Which is which?*
+1) x1 seems to be correlated with the error term, therefore it's endogenous. 2) 2) x2 also seems to be correlated with the error term, but the correlation is quite weak (0.02)
+3) z1 is also endogenous (for the same reasons as above)
+4) z2 is not correlated with x1, therefore it's irrelevant 
+5) z3 is correlated with x1, and the covariance seems to be the highest within the different alternatives. It might be considered the best instrument
+6) z4 is correlated with x1, but it is only 0.01, therefore it might be quite weak
+
+In summary, z1, z2 and z4 should not be used as instruments, as they violate the 2 assumptions of relevance and exclusion restriction.
+
+*Consider using Z4 as an instrument for X2: Which of the two assumptions can you test? Is it satisfied?*
+We can test the relevance assumption using Pearson’s product-moment correlation test
+```{r}
+cor.test(dt.IV$z4, dt.IV$x1)
+```
+
+*Pick your most preferred instrument and run the 2SLS*
+```{r}
+first_step <- lm(x1 ~ x2 + z3, data=dt.IV)
+summary(first_step)
+
+dt.IV <- dt.IV[, x1hat:=predict(first_step, newdata=dt.IV)]
+
+dt.IV
+
+second_step <- lm(y5 ~ x1hat + x2, data=dt.IV)
+stargazer(second_step, IV, type="text")
+```
+
+*Consider the MM-IV Estimator that we saw in class. What variables will you include in the Z matrix? Write a code that directly implements the estimator in matrix notation, using either the data.table command or the matrix command.Build a Z-matrix consisting of the instruments you want to use (including all exogeneous x); build an X-matrix consisting of the X variables; build a y-matrix that just consists of the vector y*
+```{r}
+z <- cbind(c(dt.IV$x2), c(dt.IV$z3))
+x <- cbind(c(dt.IV$x1), c(dt.IV$x2))
+y5 <- cbind(c(dt.IV$y5))
+
+solve(t(z)%*%x)%*%(t(z)%*%y5)
+
+library(ivreg)
+IVz1 <- ivreg(y5~x1+x2|x2 + z1, data=dt.IV)
+IVz2 <- ivreg(y5~x1+x2|x2 + z2, data=dt.IV)
+IVz3 <- ivreg(y5~x1+x2|x2 + z3, data=dt.IV)
+IVz4 <- ivreg(y5~x1+x2|x2 + z4, data=dt.IV)
+
+stargazer (dt.IV, type="text")
+```
+
+
+
+
+
+
+
+
